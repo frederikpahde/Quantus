@@ -41,7 +41,12 @@ class PyTorchModel(ModelInterface):
         grad_context = torch.no_grad() if not grad else suppress()
 
         with grad_context:
-            pred = self.model(torch.Tensor(x).to(self.device), **predict_kwargs)
+            if "question" in kwargs.keys():
+                question = kwargs['question']
+                pred = self.model(torch.Tensor(x).to(self.device), torch.Tensor(question).long().to(self.device))
+            else:
+                pred = self.model(torch.Tensor(x).to(self.device))
+
             if self.softmax:
                 pred = torch.nn.Softmax(dim=-1)(pred)
             if pred.requires_grad:

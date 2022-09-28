@@ -31,6 +31,8 @@ from .model_interface import ModelInterface
 from .normalise_func import normalise_by_negative
 from .utils import get_baseline_value, infer_channel_first, make_channel_last
 
+def attr_pooling_sum(attr, **reduce_axes):
+    return np.sum(attr, **reduce_axes)
 
 def explain(model, inputs, targets, **kwargs) -> np.ndarray:
     """
@@ -409,10 +411,12 @@ def generate_zennit_explanation(
     assert 0 not in kwargs.get(
         "reduce_axes", [1]
     ), "Reduction over batch_axis is not available, please do not include axis 0 in 'reduce_axes' kwarg."
-    assert len(kwargs.get("reduce_axes", [1])) <= inputs.ndim - 1, (
-        "Cannot reduce attributions over more axes than each sample has dimensions, but got "
-        "{} and  {}.".format(len(kwargs.get("reduce_axes", [1])), inputs.ndim - 1)
-    )
+    
+    if isinstance(inputs, np.ndarray):
+        assert len(kwargs.get("reduce_axes", [1])) <= inputs.ndim - 1, (
+            "Cannot reduce attributions over more axes than each sample has dimensions, but got "
+            "{} and  {}.".format(len(kwargs.get("reduce_axes", [1])), inputs.ndim - 1)
+        )
 
     reduce_axes = {"axis": tuple(kwargs.get("reduce_axes", [1])), "keepdims": True}
 
@@ -456,7 +460,12 @@ def generate_zennit_explanation(
     model.eval()
 
     if not isinstance(inputs, torch.Tensor):
-        inputs = torch.Tensor(inputs).to(device)
+        if isinstance(inputs, tuple):
+            inputs = (torch.Tensor(inputs[0]).to(device),
+                       torch.Tensor(inputs[1]).long().to(device))
+        else:
+            inputs = torch.Tensor(inputs).to(device)
+
 
     if not isinstance(targets, torch.Tensor):
         targets = torch.as_tensor(targets).to(device)
@@ -485,7 +494,10 @@ def generate_zennit_explanation(
         }
     )
 
-    n_outputs = model(inputs).shape[1]
+    if isinstance(inputs, tuple):
+        n_outputs = model(inputs[0], inputs[1]).shape[1]
+    else:
+        n_outputs = model(inputs).shape[1]
 
     # Get the attributions.
     with attributor:
@@ -504,7 +516,7 @@ def generate_zennit_explanation(
             explanation = explanation.cpu().numpy()
 
     # Sum over the axes.
-    print(explanation.shape, reduce_axes)
-    explanation = np.sum(explanation, **reduce_axes)
+    fn_pool = kwargs.get("fn_pool", attr_pooling_sum)
+    explanation = fn_pool(explanation, **reduce_axes)
 
     return explanation

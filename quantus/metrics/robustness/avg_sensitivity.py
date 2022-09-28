@@ -177,7 +177,7 @@ class AvgSensitivity(PerturbationMetric):
     ) -> float:
 
         results = []
-        for i in range(self.nr_samples):
+        for _ in range(self.nr_samples):
 
             # Perturb input.
             x_perturbed = self.perturb_func(
@@ -189,12 +189,16 @@ class AvgSensitivity(PerturbationMetric):
             x_input = model.shape_input(x_perturbed, x.shape, channel_first=True)
             asserts.assert_perturbation_caused_change(x=x, x_perturbed=x_perturbed)
 
+            explain_func_kwargs_copied = {key: item for key, item in self.explain_func_kwargs.items()}
+            if "question" in explain_func_kwargs_copied.keys():
+                explain_func_kwargs_copied['question'] = np.expand_dims(explain_func_kwargs_copied['question'][i], 0)
+
             # Generate explanation based on perturbed input x.
             a_perturbed = self.explain_func(
                 model=model.get_model(),
                 inputs=x_input,
                 targets=y,
-                **self.explain_func_kwargs,
+                **explain_func_kwargs_copied,
             )
 
             if self.normalise:

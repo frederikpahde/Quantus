@@ -164,6 +164,10 @@ class PixelFlipping(PerturbationMetric):
         preds = [None for _ in range(n_perturbations)]
         x_perturbed = x.copy()
 
+        explain_func_kwargs_copied = {key: item for key, item in self.explain_func_kwargs.items()}
+        if "question" in explain_func_kwargs_copied.keys():
+            explain_func_kwargs_copied['question'] = np.expand_dims(explain_func_kwargs_copied['question'][i], 0)
+
         for i_ix, a_ix in enumerate(a_indices[:: self.features_in_step]):
 
             # Perturb input by indices of attributions.
@@ -180,7 +184,7 @@ class PixelFlipping(PerturbationMetric):
 
             # Predict on perturbed input x.
             x_input = model.shape_input(x_perturbed, x.shape, channel_first=True)
-            y_pred_perturb = float(model.predict(x_input)[:, y])
+            y_pred_perturb = float(model.predict(x_input, **explain_func_kwargs_copied)[:, y])
             preds[i_ix] = y_pred_perturb
 
         return preds

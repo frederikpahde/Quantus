@@ -147,12 +147,16 @@ class RandomLogit(Metric):
             ]
         )
 
+        explain_func_kwargs_copied = {key: item for key, item in self.explain_func_kwargs.items()}
+        if "question" in explain_func_kwargs_copied.keys():
+            explain_func_kwargs_copied['question'] = np.expand_dims(explain_func_kwargs_copied['question'][i], 0)
+
         # Explain against a random class.
         a_perturbed = self.explain_func(
             model=model.get_model(),
             inputs=np.expand_dims(x, axis=0),
             targets=y_off,
-            **self.explain_func_kwargs,
+            **explain_func_kwargs_copied,
         )
 
         # Normalise and take absolute values of the attributions, if True.
