@@ -167,6 +167,7 @@ class PixelFlipping(PerturbationMetric):
         explain_func_kwargs_copied = {key: item for key, item in self.explain_func_kwargs.items()}
         if "question" in explain_func_kwargs_copied.keys():
             explain_func_kwargs_copied['question'] = np.expand_dims(explain_func_kwargs_copied['question'][i], 0)
+            explain_func_kwargs_copied['q_length'] = np.expand_dims(explain_func_kwargs_copied['q_length'][i], 0)
 
         ## Start with clean data
         x_input = model.shape_input(x_perturbed, x.shape, channel_first=True)

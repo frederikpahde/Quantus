@@ -43,7 +43,10 @@ class PyTorchModel(ModelInterface):
         with grad_context:
             if "question" in kwargs.keys():
                 question = kwargs['question']
-                pred = self.model(torch.Tensor(x).to(self.device), torch.Tensor(question).long().to(self.device))
+                question_length = kwargs['q_length']
+                pred = self.model(torch.Tensor(x).to(self.device), 
+                                  torch.Tensor(question).long().to(self.device),
+                                  question_length)
             else:
                 pred = self.model(torch.Tensor(x).to(self.device))
 

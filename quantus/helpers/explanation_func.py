@@ -462,7 +462,8 @@ def generate_zennit_explanation(
     if not isinstance(inputs, torch.Tensor):
         if isinstance(inputs, tuple):
             inputs = (torch.Tensor(inputs[0]).to(device),
-                       torch.Tensor(inputs[1]).long().to(device))
+                       torch.Tensor(inputs[1]).long().to(device),
+                       inputs[2])
         else:
             inputs = torch.Tensor(inputs).to(device)
 
@@ -495,7 +496,7 @@ def generate_zennit_explanation(
     )
 
     if isinstance(inputs, tuple):
-        n_outputs = model(inputs[0], inputs[1]).shape[1]
+        n_outputs = model(*inputs).shape[1]
     else:
         n_outputs = model(inputs).shape[1]
 
