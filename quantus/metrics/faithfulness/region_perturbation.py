@@ -168,9 +168,16 @@ class RegionPerturbation(PerturbationMetric):
         p: Any,
     ) -> List[float]:
 
+
+        explain_func_kwargs_copied = {key: item for key, item in self.explain_func_kwargs.items()}
+        if "question" in explain_func_kwargs_copied.keys():
+            explain_func_kwargs_copied['question'] = np.expand_dims(explain_func_kwargs_copied['question'][i], 0)
+            explain_func_kwargs_copied['q_length'] = np.expand_dims(explain_func_kwargs_copied['q_length'][i], 0)
+
+
         # Predict on input.
         x_input = model.shape_input(x, x.shape, channel_first=True)
-        y_pred = float(model.predict(x_input)[:, y])
+        y_pred = float(model.predict(x_input, **explain_func_kwargs_copied)[:, y])
 
         patches = []
         x_perturbed = x.copy()
@@ -267,10 +274,10 @@ class RegionPerturbation(PerturbationMetric):
             )
 
             asserts.assert_perturbation_caused_change(x=x, x_perturbed=x_perturbed)
-
+            
             # Predict on perturbed input x and store the difference from predicting on unperturbed input.
             x_input = model.shape_input(x_perturbed, x.shape, channel_first=True)
-            y_pred_perturb = float(model.predict(x_input)[:, y])
+            y_pred_perturb = float(model.predict(x_input, **explain_func_kwargs_copied)[:, y])
 
             results[patch_id] = y_pred - y_pred_perturb
 
