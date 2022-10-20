@@ -174,9 +174,14 @@ class FaithfulnessCorrelation(PerturbationMetric):
         # Flatten the attributions.
         a = a.flatten()
 
+        explain_func_kwargs_copied = {key: item for key, item in self.explain_func_kwargs.items()}
+        if "question" in explain_func_kwargs_copied.keys():
+            explain_func_kwargs_copied['question'] = np.expand_dims(explain_func_kwargs_copied['question'][i], 0)
+            explain_func_kwargs_copied['q_length'] = np.expand_dims(explain_func_kwargs_copied['q_length'][i], 0)
+
         # Predict on input.
         x_input = model.shape_input(x, x.shape, channel_first=True)
-        y_pred = float(model.predict(x_input)[:, y])
+        y_pred = float(model.predict(x_input, **explain_func_kwargs_copied)[:, y])
 
         pred_deltas = []
         att_sums = []
@@ -196,7 +201,7 @@ class FaithfulnessCorrelation(PerturbationMetric):
 
             # Predict on perturbed input x.
             x_input = model.shape_input(x_perturbed, x.shape, channel_first=True)
-            y_pred_perturb = float(model.predict(x_input)[:, y])
+            y_pred_perturb = float(model.predict(x_input, **explain_func_kwargs_copied)[:, y])
             pred_deltas.append(float(y_pred - y_pred_perturb))
 
             # Sum attributions of the random subset.
