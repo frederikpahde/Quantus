@@ -10,7 +10,7 @@ import itertools
 from typing import Any, Callable, Dict, List, Optional
 
 import numpy as np
-
+import os
 from quantus.helpers import asserts
 from quantus.helpers import plotting
 from quantus.helpers import utils
@@ -374,7 +374,9 @@ class RegionPerturbation(PerturbationMetric):
         warn.warn_iterations_exceed_patch_number(
             self.regions_evaluation, len(ordered_patches_no_overlap)
         )
-
+        save_locally = False
+        if save_locally:
+            os.makedirs('/media/pahde/Data/test/region_perturbation/', exist_ok=True)
         # Increasingly perturb the input and store the decrease in function value.
         results = [None for _ in range(len(ordered_patches_no_overlap))]
         for patch_id, patch_slice in enumerate(ordered_patches_no_overlap):
@@ -384,13 +386,31 @@ class RegionPerturbation(PerturbationMetric):
                 x_perturbed, pad_width, mode="edge", padded_axes=self.a_axes
             )
 
+            orig_shape = x_perturbed_pad.shape
+            inds_flat = []
+
+            for r in range(patch_slice[0].start, patch_slice[0].stop):
+                for c in range(patch_slice[1].start, patch_slice[1].stop):
+                    ind = r * orig_shape[1] + c
+                    inds_flat.append(ind)
+
+
             # Perturb.
+            # x_perturbed_pad = self.perturb_func(
+            #     arr=x_perturbed_pad,
+            #     indices=patch_slice,
+            #     indexed_axes=self.a_axes,
+            #     **self.perturb_func_kwargs,
+            # )
             x_perturbed_pad = self.perturb_func(
                 arr=x_perturbed_pad,
-                indices=patch_slice,
+                indices=np.array(inds_flat),
                 indexed_axes=self.a_axes,
                 **self.perturb_func_kwargs,
             )
+
+            if save_locally:
+                np.save(f"/media/pahde/Data/test/region_perturbation/sample_perturbed_{patch_id}.npy", x_perturbed)
 
             # Remove padding.
             x_perturbed = utils._unpad_array(

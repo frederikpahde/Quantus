@@ -9,7 +9,7 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
-
+import os
 from quantus.helpers import asserts
 from quantus.helpers import plotting
 from quantus.helpers import utils
@@ -290,6 +290,10 @@ class PixelFlipping(PerturbationMetric):
         y_pred_clean = float(model.predict(x_input, **model_predict_kwargs_copied)[:, y])
         preds[0] = y_pred_clean
         
+        save_locally=False
+        if save_locally:
+            os.makedirs('/media/pahde/Data/test/pixel_flipping/', exist_ok=True)
+
         for i_ix, a_ix in enumerate(a_indices[:: self.features_in_step]):
 
             # Perturb input by indices of attributions.
@@ -303,6 +307,9 @@ class PixelFlipping(PerturbationMetric):
                 **self.perturb_func_kwargs,
             )
             warn.warn_perturbation_caused_no_change(x=x, x_perturbed=x_perturbed)
+
+            if save_locally:
+                np.save(f"/media/pahde/Data/test/pixel_flipping/sample_perturbed_{i_ix}.npy", x_perturbed)
 
             # Predict on perturbed input x.
             x_input = model.shape_input(x_perturbed, x.shape, channel_first=True)

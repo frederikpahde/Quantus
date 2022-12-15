@@ -9,7 +9,7 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
-
+import os
 from quantus.helpers import warn
 from quantus.helpers import asserts
 from quantus.helpers.model.model_interface import ModelInterface
@@ -304,6 +304,12 @@ class FaithfulnessCorrelation(PerturbationMetric):
         pred_deltas = []
         att_sums = []
 
+        save_locally=False
+        if save_locally:
+            os.makedirs("/media/pahde/Data/test/faithfulness_corr/", exist_ok=True)
+            np.save(f"/media/pahde/Data/test/faithfulness_corr/y_pred_base.npy", y_pred)
+            np.save(f"/media/pahde/Data/test/faithfulness_corr/a_base.npy", a)
+
         # For each test data point, execute a couple of runs.
         for i_ix in range(self.nr_runs):
 
@@ -322,8 +328,16 @@ class FaithfulnessCorrelation(PerturbationMetric):
             y_pred_perturb = float(model.predict(x_input, **model_predict_kwargs_copied)[:, y])
             pred_deltas.append(float(y_pred - y_pred_perturb))
 
+            if save_locally:
+                np.save(f"/media/pahde/Data/test/faithfulness_corr/sample_perturbed_{i_ix}.npy", x_perturbed)
+                np.save(f"/media/pahde/Data/test/faithfulness_corr/y_pred_perturb_{i_ix}.npy", y_pred_perturb)
+                np.save(f"/media/pahde/Data/test/faithfulness_corr/a_ix_{i_ix}.npy", a_ix)
             # Sum attributions of the random subset.
             att_sums.append(np.sum(a[a_ix]))
+
+        if save_locally:
+            np.save(f"/media/pahde/Data/test/faithfulness_corr/att_sums.npy", att_sums)
+            np.save(f"/media/pahde/Data/test/faithfulness_corr/pred_deltas.npy", pred_deltas)
 
         similarity = self.similarity_func(a=att_sums, b=pred_deltas)
 
