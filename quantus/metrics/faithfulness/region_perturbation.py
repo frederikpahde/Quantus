@@ -378,7 +378,8 @@ class RegionPerturbation(PerturbationMetric):
         if save_locally:
             os.makedirs('/media/pahde/Data/test/region_perturbation/', exist_ok=True)
         # Increasingly perturb the input and store the decrease in function value.
-        results = [None for _ in range(len(ordered_patches_no_overlap))]
+        results = [None for _ in range(len(ordered_patches_no_overlap)+1)]
+        results[0] = y_pred
         for patch_id, patch_slice in enumerate(ordered_patches_no_overlap):
 
             # Pad x_perturbed. The mode should probably depend on the used perturb_func?
@@ -423,7 +424,8 @@ class RegionPerturbation(PerturbationMetric):
             x_input = model.shape_input(x_perturbed, x.shape, channel_first=True)
             y_pred_perturb = float(model.predict(x_input, **model_predict_kwargs_copied)[:, y])
 
-            results[patch_id] = y_pred - y_pred_perturb
+            # results[patch_id] = y_pred - y_pred_perturb
+            results[patch_id+1] = y_pred_perturb
 
         return results
 
